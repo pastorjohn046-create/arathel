@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #2563eb;
+  --color-brand-dark: #1e40af;
+  --color-surface: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-ink: #0f172a;
+  --color-ink-muted: #64748b;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-ink font-sans antialiased;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white border border-border rounded-xl shadow-sm overflow-hidden;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:border-brand/20;
+  }
+
+  .btn-primary {
+    @apply bg-brand text-white px-4 py-2 rounded-lg font-semibold hover:bg-brand-dark transition-colors shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-ink border border-border px-4 py-2 rounded-lg font-semibold hover:bg-surface transition-colors;
+  }
+
+  .stat-label {
+    @apply text-ink-muted text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold text-ink;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-surface;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+}
+

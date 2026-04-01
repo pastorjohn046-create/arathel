@@ -10,7 +10,7 @@ import { BentoGrid } from './components/Dashboard/BentoGrid';
 import { Hero } from './components/Dashboard/Hero';
 import { Card } from './components/ui/Card';
 import { AdminPanel } from './components/Admin/AdminPanel';
-import { BarChart3, TrendingUp, ShieldCheck, Activity, ShieldAlert, ArrowRight, User, Mail, Calendar, CreditCard, Shield, Search, ChevronDown, LayoutDashboard, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { BarChart3, BarChart2, TrendingUp, ShieldCheck, Activity, ShieldAlert, ArrowRight, User, Mail, Calendar, CreditCard, Shield, Search, ChevronDown, LayoutDashboard, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { AuthModal } from './components/Auth/AuthModal';
 import { useAuth } from './contexts/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
@@ -19,6 +19,7 @@ import { WithdrawalNotification } from './components/ui/WithdrawalNotification';
 import { Reviews } from './components/Dashboard/Reviews';
 import { DepositModal } from './components/Modals/DepositModal';
 import { WithdrawModal } from './components/Modals/WithdrawModal';
+import { SupportChat } from './components/Support/SupportChat';
 
 const STOCKS = [
   { symbol: 'AAPL', name: 'Apple Inc.', price: 185.92, change: '+1.34%' },
@@ -265,6 +266,8 @@ export default function App() {
       <DepositModal isOpen={isDepositModalOpen} onClose={() => setIsDepositModalOpen(false)} />
       <WithdrawModal isOpen={isWithdrawModalOpen} onClose={() => setIsWithdrawModalOpen(false)} />
       
+      {user && <SupportChat />}
+
       {/* Admin Toggle Notification */}
       {isAdmin && (
         <div className="bg-red-600 text-white text-[10px] font-bold py-1 px-4 text-center uppercase tracking-widest">
@@ -776,6 +779,12 @@ export default function App() {
             <h4 className="font-bold text-ink mb-4">Support</h4>
             <ul className="text-ink-muted text-sm space-y-3">
               <li className="hover:text-brand cursor-pointer transition-colors">Help Center</li>
+              <li className="hover:text-brand cursor-pointer transition-colors">
+                <a href="https://wa.me/13363247969" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span>WhatsApp Support</span>
+                </a>
+              </li>
               <li className="hover:text-brand cursor-pointer transition-colors">Contact Support</li>
               <li className="hover:text-brand cursor-pointer transition-colors">Security Center</li>
               <li className="hover:text-brand cursor-pointer transition-colors">Regulatory Info</li>
@@ -796,23 +805,3 @@ export default function App() {
 }
 
 // Helper icons for footer
-function BarChart2(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="18" x2="18" y1="20" y2="10" />
-      <line x1="12" x2="12" y1="20" y2="4" />
-      <line x1="6" x2="6" y1="20" y2="14" />
-    </svg>
-  );
-}

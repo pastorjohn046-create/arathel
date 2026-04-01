@@ -13,14 +13,19 @@ interface UserProfile {
   watchlist: string[];
 }
 
+interface User {
+  uid: string;
+  email: string;
+}
+
 interface AuthContextType {
-  user: { uid: string; email: string; displayName?: string } | null;
+  user: User | null;
   profile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
   login: (email: string, pass: string) => Promise<void>;
   register: (email: string, pass: string, name: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
@@ -31,114 +36,87 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   login: async () => {},
   register: async () => {},
-  logout: () => {},
+  logout: async () => {},
   updateProfile: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
-const USERS_KEY = 'arathel_users';
-const CURRENT_USER_KEY = 'arathel_current_user';
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<{ uid: string; email: string; displayName?: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem(CURRENT_USER_KEY);
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
+    const savedUser = localStorage.getItem('auth_user');
+    if (savedUser) {
+      const parsedUser = JSON.parse(savedUser);
       setUser(parsedUser);
-      
-      const allUsers = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-      let userProfile = allUsers.find((u: any) => u.uid === parsedUser.uid);
-      
-      // Force admin role for specific email
-      if (userProfile && userProfile.email === 'pastorjohn046@gmail.com' && userProfile.role !== 'admin') {
-        userProfile.role = 'admin';
-        const updatedUsers = allUsers.map((u: any) => u.uid === userProfile.uid ? userProfile : u);
-        localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-      }
+      fetchProfile(parsedUser.uid);
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
+  const fetchProfile = async (uid: string) => {
+    try {
+      const response = await fetch(`/api/users`);
+      const users = await response.json();
+      const userProfile = users.find((u: any) => u.uid === uid);
       if (userProfile) {
         setProfile(userProfile);
       }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, []);
+  };
 
   const login = async (email: string, pass: string) => {
-    const allUsers = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const foundUser = allUsers.find((u: any) => u.email === email && u.password === pass);
-    
-    if (!foundUser) {
-      throw new Error('Invalid email or password');
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass })
+      });
+      const data = await response.json();
+      if (data.user) {
+        const userData = { uid: data.user.uid, email: data.user.email };
+        setUser(userData);
+        setProfile(data.user);
+        localStorage.setItem('auth_user', JSON.stringify(userData));
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
     }
-
-    const { password, ...userProfile } = foundUser;
-    const sessionUser = { uid: userProfile.uid, email: userProfile.email, displayName: userProfile.displayName };
-    
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(sessionUser));
-    setUser(sessionUser);
-    setProfile(userProfile);
   };
 
   const register = async (email: string, pass: string, name: string) => {
-    const allUsers = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    if (allUsers.some((u: any) => u.email === email)) {
-      throw new Error('User already exists');
-    }
-
-    const uid = Math.random().toString(36).substring(2, 15);
-    const numericId = Math.floor(Math.random() * 9000000 + 1000000).toString();
-    
-    const newProfile: UserProfile & { password?: string } = {
-      uid,
-      numericId,
-      email,
-      displayName: name,
-      password: pass,
-      role: email === 'pastorjohn046@gmail.com' ? 'admin' : 'user',
-      createdAt: new Date().toISOString(),
-      portfolioValue: 0,
-      buyingPower: 100000,
-      holdings: [],
-      watchlist: ['AAPL', 'MSFT', 'NVDA'],
-    };
-
-    allUsers.push(newProfile);
-    localStorage.setItem(USERS_KEY, JSON.stringify(allUsers));
-    
-    const { password, ...sessionProfile } = newProfile;
-    const sessionUser = { uid, email, displayName: name };
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(sessionUser));
-    setUser(sessionUser);
-    setProfile(sessionProfile as UserProfile);
+    // For simplicity, register is same as login in this mock setup
+    await login(email, pass);
   };
 
-  const logout = () => {
-    localStorage.removeItem(CURRENT_USER_KEY);
+  const logout = async () => {
     setUser(null);
     setProfile(null);
+    localStorage.removeItem('auth_user');
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return;
-    
-    const allUsers = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const updatedUsers = allUsers.map((u: any) => {
-      if (u.uid === user.uid) {
-        return { ...u, ...updates };
-      }
-      return u;
-    });
-    
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    const updatedProfile = updatedUsers.find((u: any) => u.uid === user.uid);
-    if (updatedProfile) {
-      const { password, ...prof } = updatedProfile;
-      setProfile(prof as UserProfile);
+    try {
+      const response = await fetch(`/api/users/${user.uid}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      const updatedProfile = await response.json();
+      setProfile(updatedProfile);
+    } catch (error) {
+      console.error("Update profile error:", error);
+      throw error;
     }
   };
 
@@ -147,7 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, 
       profile, 
       loading, 
-      isAdmin: profile?.role === 'admin',
+      isAdmin: profile?.role === 'admin' || profile?.email === 'pastorjohn046@gmail.com',
       login,
       register,
       logout,
@@ -157,3 +135,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
+

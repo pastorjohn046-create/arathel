@@ -27,34 +27,37 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
     }
 
     setLoading(true);
-    // Simulate withdrawal processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      const response = await fetch('/api/deposits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: profile.uid,
+          userEmail: profile.email,
+          amount: Number(amount),
+          method,
+          details,
+          type: 'withdrawal'
+        })
+      });
 
-    if (profile) {
-      const withdrawRequest = {
-        id: Math.random().toString(36).substring(2, 9),
-        userId: profile.uid,
-        userEmail: profile.email,
-        amount: Number(amount),
-        method,
-        details,
-        status: 'pending',
-        type: 'withdrawal',
-        createdAt: new Date().toISOString()
-      };
-      const withdrawals = JSON.parse(localStorage.getItem('arathel_withdrawals') || '[]');
-      withdrawals.push(withdrawRequest);
-      localStorage.setItem('arathel_withdrawals', JSON.stringify(withdrawals));
+      if (response.ok) {
+        setSuccess(true);
+        setTimeout(() => {
+          setSuccess(false);
+          setAmount('');
+          setDetails('');
+          onClose();
+        }, 2000);
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Withdrawal failed');
+      }
+    } catch (error) {
+      console.error("Error creating withdrawal request:", error);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-    setSuccess(true);
-    setTimeout(() => {
-      setSuccess(false);
-      setAmount('');
-      setDetails('');
-      onClose();
-    }, 2000);
   };
 
   return (

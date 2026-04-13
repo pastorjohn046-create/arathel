@@ -30,6 +30,20 @@ if (fs.existsSync(DB_PATH)) {
     const data = fs.readFileSync(DB_PATH, "utf-8");
     const savedStore = JSON.parse(data);
     store = { ...store, ...savedStore };
+    
+    // One-time fix: Ensure all users have the 10k bonus if they have 0 balance
+    let hasUpdates = false;
+    store.users = store.users.map(u => {
+      if (u.buyingPower === 0) {
+        u.buyingPower = 10000;
+        hasUpdates = true;
+      }
+      return u;
+    });
+    if (hasUpdates) {
+      fs.writeFileSync(DB_PATH, JSON.stringify(store, null, 2));
+    }
+
     console.log(`[DB] Loaded: ${store.users.length} users, ${store.accounts.length} accounts, ${store.supportMessages.length} messages`);
   } catch (e) {
     console.error("[DB] Load failed:", e);
@@ -78,7 +92,7 @@ async function startServer() {
         uid: Math.random().toString(36).substring(7),
         email,
         displayName: email.split('@')[0],
-        buyingPower: 0,
+        buyingPower: 10000,
         portfolioValue: 0,
         holdings: [],
         numericId: Math.floor(100000 + Math.random() * 900000),

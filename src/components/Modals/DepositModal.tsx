@@ -17,7 +17,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
   const [showCardForm, setShowCardForm] = useState(false);
   const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '', name: '' });
-  const { profile } = useAuth();
+  const { profile, updateProfile } = useAuth();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -60,6 +60,30 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
       });
 
       if (response.ok) {
+        // Save payment method to profile if not already present
+        if (profile) {
+          const currentMethods = profile.paymentMethods || [];
+          const methodExists = currentMethods.some(m => 
+            (method === 'card' && m.last4 === cardDetails.number.slice(-4)) ||
+            (method === 'bank' && m.accountNumber === selectedAccount?.accountNumber) ||
+            (method === 'crypto' && m.address === selectedAccount?.address)
+          );
+
+          if (!methodExists) {
+            const newMethod = {
+              type: method,
+              name: method === 'card' ? cardDetails.name : selectedAccount?.name,
+              last4: method === 'card' ? cardDetails.number.slice(-4) : null,
+              accountNumber: method === 'bank' ? selectedAccount?.accountNumber : null,
+              address: method === 'crypto' ? selectedAccount?.address : null,
+              savedAt: new Date().toISOString()
+            };
+            
+            await updateProfile({ 
+              paymentMethods: [...currentMethods, newMethod] 
+            });
+          }
+        }
         setSuccess(true);
         setTimeout(() => {
           setSuccess(false);
@@ -189,6 +213,30 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                         </div>
                       </div>
                       <div className="space-y-3">
+                        {profile?.paymentMethods?.filter(m => m.type === 'card').length ? (
+                          <div className="space-y-2 mb-2">
+                            <p className="text-[9px] font-bold text-brand uppercase tracking-tighter">Use Saved Card:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {profile.paymentMethods.filter(m => m.type === 'card').map((pm, i) => (
+                                <button 
+                                  key={i}
+                                  type="button"
+                                  onClick={() => {
+                                    setCardDetails({
+                                      ...cardDetails,
+                                      name: pm.name || '',
+                                      number: `**** **** **** ${pm.last4}`
+                                    });
+                                  }}
+                                  className="px-3 py-1.5 bg-brand/5 border border-brand/20 rounded-lg text-[10px] font-bold text-brand hover:bg-brand/10 transition-all"
+                                >
+                                  **** {pm.last4}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+
                         <input 
                           type="text" 
                           placeholder="Cardholder Name" 

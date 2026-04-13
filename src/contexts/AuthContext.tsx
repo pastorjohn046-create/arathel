@@ -11,6 +11,7 @@ interface UserProfile {
   buyingPower: number;
   holdings: any[];
   watchlist: string[];
+  paymentMethods?: any[];
 }
 
 interface User {

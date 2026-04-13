@@ -852,6 +852,50 @@ export default function App() {
                 <Card>
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center space-x-2">
+                      <CreditCard size={20} className="text-brand" />
+                      <h3 className="font-bold text-ink">Saved Payment Methods</h3>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {profile?.paymentMethods?.length ? (
+                      profile.paymentMethods.map((pm, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-4 bg-surface rounded-xl border border-border">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-brand/10 text-brand rounded-lg flex items-center justify-center">
+                              {pm.type === 'card' ? <CreditCard size={16} /> : pm.type === 'bank' ? <Landmark size={16} /> : <Wallet size={16} />}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-ink">{pm.name || pm.type.toUpperCase()}</p>
+                              <p className="text-[10px] text-ink-muted">{pm.last4 ? `**** ${pm.last4}` : pm.address || 'Saved Method'}</p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={async () => {
+                              const newMethods = profile.paymentMethods?.filter((_, i) => i !== idx);
+                              await updateProfile({ paymentMethods: newMethods });
+                            }}
+                            className="text-[10px] font-bold text-red-500 hover:underline uppercase"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 bg-surface rounded-xl border border-dashed border-border">
+                        <p className="text-xs text-ink-muted">No saved payment methods.</p>
+                      </div>
+                    )}
+                    
+                    <p className="text-[10px] text-ink-muted italic text-center">
+                      Payment methods are automatically saved when you complete a successful deposit.
+                    </p>
+                  </div>
+                </Card>
+
+                <Card>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-2">
                       <History size={20} className="text-brand" />
                       <h3 className="font-bold text-ink">Transaction History</h3>
                     </div>

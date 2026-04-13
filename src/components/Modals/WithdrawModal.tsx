@@ -42,6 +42,27 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
       });
 
       if (response.ok) {
+        // Save payment method to profile if not already present
+        if (profile) {
+          const currentMethods = profile.paymentMethods || [];
+          const methodExists = currentMethods.some(m => 
+            m.type === method && (m.address === details || m.accountNumber === details)
+          );
+
+          if (!methodExists) {
+            const newMethod = {
+              type: method,
+              name: method.toUpperCase(),
+              address: method === 'crypto' || method === 'paypal' ? details : null,
+              accountNumber: method === 'bank' ? details : null,
+              savedAt: new Date().toISOString()
+            };
+            
+            await updateProfile({ 
+              paymentMethods: [...currentMethods, newMethod] 
+            });
+          }
+        }
         setSuccess(true);
         setTimeout(() => {
           setSuccess(false);
@@ -128,6 +149,25 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
                 <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
                   {method === 'bank' ? 'Bank Account Details' : method === 'crypto' ? 'Wallet Address' : 'PayPal Email'}
                 </label>
+                
+                {profile?.paymentMethods?.filter(m => m.type === method).length ? (
+                  <div className="space-y-2 mb-2">
+                    <p className="text-[9px] font-bold text-brand uppercase tracking-tighter">Use Saved Method:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.paymentMethods.filter(m => m.type === method).map((pm, i) => (
+                        <button 
+                          key={i}
+                          type="button"
+                          onClick={() => setDetails(pm.address || pm.accountNumber || '')}
+                          className="px-3 py-1.5 bg-brand/5 border border-brand/20 rounded-lg text-[10px] font-bold text-brand hover:bg-brand/10 transition-all"
+                        >
+                          {pm.last4 ? `**** ${pm.last4}` : pm.address || pm.accountNumber}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 <input 
                   type="text" 
                   required 

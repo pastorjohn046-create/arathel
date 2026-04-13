@@ -26,10 +26,15 @@ export const ConfirmDeposits: React.FC = () => {
   const handleUpdateStatus = async (id: string, status: 'completed' | 'rejected') => {
     setLoading(id);
     try {
+      const body: any = { status };
+      if (status === 'rejected') {
+        body.declineReason = "Verification for withdrawal needed";
+      }
+      
       const response = await fetch(`/api/deposits/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify(body)
       });
       if (response.ok) {
         fetchDeposits();

@@ -18,6 +18,7 @@ export const AdminSupport: React.FC = () => {
   const [showUserList, setShowUserList] = useState(true);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [reply, setReply] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const [chatUsers, setChatUsers] = useState<any[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -76,8 +77,9 @@ export const AdminSupport: React.FC = () => {
 
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reply.trim() || !adminUser || !selectedUserId) return;
+    if (!reply.trim() || !adminUser || !selectedUserId || isSending) return;
 
+    setIsSending(true);
     try {
       const response = await fetch('/api/support', {
         method: 'POST',
@@ -95,6 +97,8 @@ export const AdminSupport: React.FC = () => {
       }
     } catch (error) {
       console.error("Error sending reply:", error);
+    } finally {
+      setIsSending(false);
     }
   };
 

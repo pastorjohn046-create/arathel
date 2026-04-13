@@ -2,19 +2,47 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const DB_PATH = path.join(process.cwd(), "db.json");
 
-// In-memory data store
-const store = {
+// In-memory data store with persistence
+let store = {
   users: [] as any[],
   deposits: [] as any[],
   accounts: [
     { id: '1', type: 'bank', name: 'Chase Bank', accountNumber: '**** 4567', routingNumber: '021000021' },
     { id: '2', type: 'crypto', name: 'Bitcoin (BTC)', address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh' }
   ] as any[],
-  supportMessages: [] as any[]
+  supportMessages: [] as any[],
+  arathelConfig: {
+    price: 500.00,
+    trend: 'stable' as 'up' | 'down' | 'stable',
+    change: '+0.00%'
+  }
+};
+
+// Load store from file if exists
+if (fs.existsSync(DB_PATH)) {
+  try {
+    const data = fs.readFileSync(DB_PATH, "utf-8");
+    const savedStore = JSON.parse(data);
+    store = { ...store, ...savedStore };
+    console.log(`[DB] Loaded: ${store.users.length} users, ${store.accounts.length} accounts, ${store.supportMessages.length} messages`);
+  } catch (e) {
+    console.error("[DB] Load failed:", e);
+  }
+}
+
+const saveStore = () => {
+  try {
+    fs.writeFileSync(DB_PATH, JSON.stringify(store, null, 2));
+    console.log(`[DB] Saved: ${store.users.length} users, ${store.accounts.length} accounts, ${store.supportMessages.length} messages`);
+  } catch (e) {
+    console.error("[DB] Save failed:", e);
+  }
 };
 
 async function startServer() {
@@ -28,10 +56,23 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  // Arathel Config routes
+  app.get("/api/arathel", (req, res) => {
+    res.json(store.arathelConfig);
+  });
+
+  app.patch("/api/arathel", (req, res) => {
+    store.arathelConfig = { ...store.arathelConfig, ...req.body };
+    saveStore();
+    res.json(store.arathelConfig);
+  });
+
   // Auth routes
   app.post("/api/auth/login", (req, res) => {
     const { email, password } = req.body;
-    let user = store.users.find(u => u.email === email);
+    if (!email) return res.status(400).json({ error: "Email is required" });
+    
+    let user = store.users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (!user) {
       user = {
         uid: Math.random().toString(36).substring(7),
@@ -44,6 +85,7 @@ async function startServer() {
         createdAt: new Date().toISOString()
       };
       store.users.push(user);
+      saveStore();
     }
     res.json({ user });
   });
@@ -58,6 +100,7 @@ async function startServer() {
     const index = store.users.findIndex(u => u.uid === uid);
     if (index !== -1) {
       store.users[index] = { ...store.users[index], ...updates };
+      saveStore();
       res.json(store.users[index]);
     } else {
       res.status(404).json({ error: "User not found" });
@@ -91,16 +134,20 @@ async function startServer() {
     }
     
     store.deposits.push(deposit);
+    saveStore();
     res.json(deposit);
   });
 
   app.patch("/api/deposits/:id", (req, res) => {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, declineReason } = req.body;
     const index = store.deposits.findIndex(d => d.id === id);
     if (index !== -1) {
       store.deposits[index].status = status;
       store.deposits[index].updatedAt = new Date().toISOString();
+      if (declineReason) {
+        store.deposits[index].declineReason = declineReason;
+      }
       
       if (status === 'completed') {
         const userIndex = store.users.findIndex(u => u.uid === store.deposits[index].userId);
@@ -108,6 +155,7 @@ async function startServer() {
           store.users[userIndex].buyingPower += Number(store.deposits[index].amount);
         }
       }
+      saveStore();
       res.json(store.deposits[index]);
     } else {
       res.status(404).json({ error: "Deposit not found" });
@@ -125,12 +173,14 @@ async function startServer() {
       ...req.body
     };
     store.accounts.push(account);
+    saveStore();
     res.json(account);
   });
 
   app.delete("/api/accounts/:id", (req, res) => {
     const { id } = req.params;
     store.accounts = store.accounts.filter(a => a.id !== id);
+    saveStore();
     res.json({ success: true });
   });
 
@@ -143,12 +193,31 @@ async function startServer() {
   });
 
   app.post("/api/support", (req, res) => {
+    const { userId, senderId, text, isAdmin } = req.body;
+    
+    // Simple duplicate check (same user, same text, within last 2 seconds)
+    const now = new Date();
+    const isDuplicate = store.supportMessages.some(m => 
+      m.userId === userId && 
+      m.senderId === senderId && 
+      m.text === text && 
+      (now.getTime() - new Date(m.timestamp).getTime()) < 2000
+    );
+
+    if (isDuplicate) {
+      return res.status(400).json({ error: "Duplicate message" });
+    }
+
     const message = {
       id: Math.random().toString(36).substring(7),
-      ...req.body,
-      timestamp: new Date().toISOString()
+      userId,
+      senderId,
+      text,
+      isAdmin: !!isAdmin,
+      timestamp: now.toISOString()
     };
     store.supportMessages.push(message);
+    saveStore();
     res.json(message);
   });
 

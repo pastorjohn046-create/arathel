@@ -8,6 +8,7 @@ export const SupportChat: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<any[]>([]);
+  const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = async () => {
@@ -37,8 +38,9 @@ export const SupportChat: React.FC = () => {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || !user) return;
+    if (!message.trim() || !user || isSending) return;
 
+    setIsSending(true);
     try {
       const response = await fetch('/api/support', {
         method: 'POST',
@@ -56,6 +58,8 @@ export const SupportChat: React.FC = () => {
       }
     } catch (error) {
       console.error("Error sending message:", error);
+    } finally {
+      setIsSending(false);
     }
   };
 

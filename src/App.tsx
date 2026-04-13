@@ -4,15 +4,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Navbar } from './components/Navigation/Navbar';
 import { MarketTicker } from './components/Dashboard/MarketTicker';
 import { BentoGrid } from './components/Dashboard/BentoGrid';
 import { Hero } from './components/Dashboard/Hero';
 import { Card } from './components/ui/Card';
 import { AdminPanel } from './components/Admin/AdminPanel';
-import { BarChart3, BarChart2, TrendingUp, ShieldCheck, Activity, ShieldAlert, ArrowRight, User, Mail, Calendar, CreditCard, Shield, Search, ChevronDown, LayoutDashboard, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { BarChart3, BarChart2, TrendingUp, ShieldCheck, Activity, ShieldAlert, ArrowRight, User, Mail, Calendar, CreditCard, Shield, Search, ChevronDown, LayoutDashboard, ArrowUpRight, ArrowDownLeft, X, History, CheckCircle2, XCircle, Clock, Landmark, Wallet } from 'lucide-react';
 import { AuthModal } from './components/Auth/AuthModal';
 import { useAuth } from './contexts/AuthContext';
+import { cn } from './lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { SplashScreen } from './components/ui/SplashScreen';
 import { WithdrawalNotification } from './components/ui/WithdrawalNotification';
@@ -22,6 +24,7 @@ import { WithdrawModal } from './components/Modals/WithdrawModal';
 import { SupportChat } from './components/Support/SupportChat';
 
 const STOCKS = [
+  { symbol: 'ARATHEL', name: 'Arathel Network', price: 500.00, change: '+0.00%' },
   { symbol: 'AAPL', name: 'Apple Inc.', price: 185.92, change: '+1.34%' },
   { symbol: 'TSLA', price: 172.45, name: 'Tesla, Inc.', change: '+4.2%' },
   { symbol: 'MSFT', price: 415.50, name: 'Microsoft Corp.', change: '+1.1%' },
@@ -38,6 +41,10 @@ export default function App() {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const { user, profile, isAdmin: isUserAdmin, updateProfile } = useAuth();
+
+  const handleSplashComplete = React.useCallback(() => {
+    setShowSplash(false);
+  }, []);
   
   // Trading State
   const [stocks, setStocks] = useState(STOCKS);
@@ -46,23 +53,66 @@ export default function App() {
   const [chartData, setChartData] = useState<any[]>([]);
   const [isStockListOpen, setIsStockListOpen] = useState(false);
   const [timeFrame, setTimeFrame] = useState('1D');
+  const [declineNotice, setDeclineNotice] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
 
   const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : selectedStock.price;
 
   // Update stock prices periodically to simulate market movement
   useEffect(() => {
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
+      let arathelConfig = { price: 1.00, trend: 'stable', change: '+0.00%' };
+      try {
+        const res = await fetch('/api/arathel');
+        if (res.ok) arathelConfig = await res.json();
+      } catch (e) {
+        console.error("Failed to fetch arathel config");
+      }
+
       setStocks(prev => prev.map(s => {
+        if (s.symbol === 'ARATHEL') {
+          let change = 0;
+          if (arathelConfig.trend === 'up') {
+            // Guaranteed rise: between 0.5% and 1.5% per update
+            change = (Math.random() * 0.01 + 0.005) * s.price;
+          } else if (arathelConfig.trend === 'down') {
+            // Guaranteed fall: between 0.5% and 1.5% per update
+            change = -(Math.random() * 0.01 + 0.005) * s.price;
+          } else {
+            // Stable: No change at all
+            change = 0;
+          }
+
+          const newPrice = Number((s.price + change).toFixed(2));
+          const originalPrice = STOCKS.find(orig => orig.symbol === s.symbol)!.price;
+          const pctChange = ((newPrice - originalPrice) / originalPrice * 100).toFixed(2);
+          
+          // Sync back to server frequently for real-time consistency
+          fetch('/api/arathel', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price: newPrice, change: (Number(pctChange) >= 0 ? '+' : '') + pctChange + '%' })
+          }).catch(() => {});
+
+          return {
+            ...s,
+            price: newPrice,
+            change: (Number(pctChange) >= 0 ? '+' : '') + pctChange + '%'
+          };
+        }
+
         const change = (Math.random() - 0.5) * (s.price * 0.002);
         const newPrice = Number((s.price + change).toFixed(2));
-        const pctChange = ((newPrice - STOCKS.find(orig => orig.symbol === s.symbol)!.price) / STOCKS.find(orig => orig.symbol === s.symbol)!.price * 100).toFixed(2);
+        const originalPrice = STOCKS.find(orig => orig.symbol === s.symbol)!.price;
+        const pctChange = ((newPrice - originalPrice) / originalPrice * 100).toFixed(2);
         return {
           ...s,
           price: newPrice,
           change: (Number(pctChange) >= 0 ? '+' : '') + pctChange + '%'
         };
       }));
-    }, 5000);
+    }, 1000); // Increased frequency to 1 second for "immediate" feel
     return () => clearInterval(interval);
   }, []);
 
@@ -71,6 +121,72 @@ export default function App() {
     const updated = stocks.find(s => s.symbol === selectedStock.symbol);
     if (updated) setSelectedStock(updated);
   }, [stocks]);
+
+  // Fetch deposits to check for declined withdrawals
+  useEffect(() => {
+    if (!user) {
+      setDeclineNotice(null);
+      return;
+    }
+
+    const checkDecline = async () => {
+      try {
+        const res = await fetch(`/api/deposits?userId=${user.uid}&status=rejected`);
+        if (res.ok) {
+          const rejected = await res.json();
+          const notice = rejected.find((d: any) => d.declineReason)?.declineReason;
+          if (notice) {
+            setDeclineNotice(notice);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch rejected deposits");
+      }
+    };
+
+    checkDecline();
+    const interval = setInterval(checkDecline, 10000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Fetch all transactions for the user
+  useEffect(() => {
+    if (!user || activeTab !== 'settings') return;
+
+    const fetchTransactions = async () => {
+      try {
+        const res = await fetch(`/api/deposits?userId=${user.uid}`);
+        if (res.ok) {
+          const data = await res.json();
+          // Sort by date descending
+          setTransactions(data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        }
+      } catch (e) {
+        console.error("Failed to fetch transactions");
+      }
+    };
+
+    fetchTransactions();
+  }, [user, activeTab]);
+
+  // Fetch global accounts
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const res = await fetch('/api/accounts');
+        if (res.ok) {
+          const data = await res.json();
+          setAccounts(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch accounts");
+      }
+    };
+
+    fetchAccounts();
+    const interval = setInterval(fetchAccounts, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isAdmin = isUserAdmin;
 
@@ -258,7 +374,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-surface">
-      <SplashScreen onComplete={() => setShowSplash(false)} />
+      <AnimatePresence>
+        {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+      </AnimatePresence>
       <WithdrawalNotification />
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} onOpenAuth={() => setIsAuthModalOpen(true)} />
       
@@ -314,6 +432,27 @@ export default function App() {
                       <span>Withdraw</span>
                     </button>
                   </div>
+
+                  {declineNotice && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start space-x-3"
+                    >
+                      <ShieldAlert className="text-red-600 shrink-0 mt-0.5" size={18} />
+                      <div className="flex-grow">
+                        <p className="text-xs font-bold text-red-900 uppercase tracking-wider mb-1">Verification Required</p>
+                        <p className="text-sm text-red-700 font-medium">{declineNotice}</p>
+                      </div>
+                      <button 
+                        onClick={() => setDeclineNotice(null)}
+                        className="text-red-400 hover:text-red-600 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    </motion.div>
+                  )}
+
                   <BentoGrid 
                     portfolioValue={portfolioStats.totalValue}
                     buyingPower={profile?.buyingPower || 0}
@@ -663,6 +802,12 @@ export default function App() {
                         <p className="text-sm font-bold text-brand">#{profile?.numericId || 'N/A'}</p>
                       </div>
                       <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Arathel (ARATHEL) Holdings</p>
+                        <p className="text-sm font-bold text-brand">
+                          {profile?.holdings?.find(h => h.symbol === 'ARATHEL')?.amount?.toLocaleString() || '0'} ARATHEL
+                        </p>
+                      </div>
+                      <div className="space-y-1">
                         <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Member Since</p>
                         <p className="text-sm font-bold text-ink">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'N/A'}</p>
                       </div>
@@ -703,6 +848,68 @@ export default function App() {
                     </div>
                   </div>
                 </Card>
+
+                <Card>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-2">
+                      <History size={20} className="text-brand" />
+                      <h3 className="font-bold text-ink">Transaction History</h3>
+                    </div>
+                    <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Last 10 Activities</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    {transactions.length === 0 ? (
+                      <div className="text-center py-8 bg-surface rounded-xl border border-dashed border-border">
+                        <p className="text-xs text-ink-muted">No transactions found.</p>
+                      </div>
+                    ) : (
+                      transactions.slice(0, 10).map((tx) => (
+                        <div key={tx.id} className="flex items-center justify-between p-4 bg-surface rounded-2xl border border-border group hover:border-brand/30 transition-all">
+                          <div className="flex items-center space-x-4">
+                            <div className={cn(
+                              "w-10 h-10 rounded-xl flex items-center justify-center",
+                              tx.type === 'withdrawal' ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+                            )}>
+                              {tx.type === 'withdrawal' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-ink capitalize">{tx.type || 'Deposit'} via {tx.method}</p>
+                              <p className="text-[10px] text-ink-muted font-bold uppercase tracking-wider">{new Date(tx.createdAt).toLocaleDateString()} • {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={cn("text-sm font-black", tx.type === 'withdrawal' ? "text-red-600" : "text-green-600")}>
+                              {tx.type === 'withdrawal' ? '-' : '+'}${tx.amount.toLocaleString()}
+                            </p>
+                            <div className="flex items-center justify-end space-x-1 mt-1">
+                              {tx.status === 'completed' ? (
+                                <span className="flex items-center text-[9px] font-bold text-green-600 uppercase tracking-widest">
+                                  <CheckCircle2 size={10} className="mr-1" /> Success
+                                </span>
+                              ) : tx.status === 'rejected' ? (
+                                <div className="flex flex-col items-end">
+                                  <span className="flex items-center text-[9px] font-bold text-red-600 uppercase tracking-widest">
+                                    <XCircle size={10} className="mr-1" /> Declined
+                                  </span>
+                                  {tx.declineReason && (
+                                    <p className="text-[8px] text-red-400 font-medium mt-0.5 max-w-[120px] truncate" title={tx.declineReason}>
+                                      {tx.declineReason}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="flex items-center text-[9px] font-bold text-yellow-600 uppercase tracking-widest">
+                                  <Clock size={10} className="mr-1" /> Pending
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </Card>
               </div>
 
               <div className="space-y-6">
@@ -733,6 +940,41 @@ export default function App() {
                         <span>Withdraw</span>
                       </button>
                     </div>
+                  </div>
+                </Card>
+
+                <Card className="bg-brand/5 border-brand/20">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <CreditCard size={18} className="text-brand" />
+                    <h3 className="text-xs font-bold text-ink uppercase tracking-widest">Available Deposit Options</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {accounts.length === 0 ? (
+                      <p className="text-[10px] text-ink-muted italic">No public deposit options available.</p>
+                    ) : (
+                      accounts.map((acc) => (
+                        <div key={acc.id} className="p-3 bg-white rounded-xl border border-brand/10 flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center",
+                              acc.type === 'bank' ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"
+                            )}>
+                              {acc.type === 'bank' ? <Landmark size={14} /> : <Wallet size={14} />}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-ink">{acc.name}</p>
+                              <p className="text-[9px] text-ink-muted uppercase font-bold tracking-tighter">{acc.type}</p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => setIsDepositModalOpen(true)}
+                            className="text-[9px] font-bold text-brand hover:underline uppercase"
+                          >
+                            Use
+                          </button>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </Card>
 

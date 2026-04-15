@@ -20,23 +20,23 @@ export const Hero: React.FC<{ onOpenAuth: () => void }> = ({ onOpenAuth }) => {
                 Trusted by 2M+ Investors
               </span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-ink mb-6 leading-[1.1]">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-ink mb-6 leading-[1.1]">
               The Future of <br />
               <span className="text-brand">Wealth Management</span>
             </h1>
-            <p className="text-ink-muted text-lg md:text-xl max-w-xl mb-10 leading-relaxed">
+            <p className="text-ink-muted text-base md:text-xl max-w-xl mb-10 leading-relaxed">
               Arathel Network provides a sophisticated trading environment for stocks, ETFs, and commodities. Built for precision, security, and performance.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
               <button 
                 onClick={onOpenAuth}
-                className="bg-brand text-white px-8 py-4 rounded-xl font-bold text-lg flex items-center justify-center hover:bg-brand-hover transition-all shadow-xl shadow-brand/20 active:scale-95"
+                className="w-full sm:w-auto bg-brand text-white px-8 py-4 rounded-xl font-bold text-base md:text-lg flex items-center justify-center hover:bg-brand-hover transition-all shadow-xl shadow-brand/20 active:scale-95"
               >
                 Get Started Now
                 <ArrowRight className="ml-2" size={20} />
               </button>
-              <button className="bg-white text-ink px-8 py-4 rounded-xl font-bold text-lg border border-border hover:bg-surface transition-all active:scale-95">
+              <button className="w-full sm:w-auto bg-white text-ink px-8 py-4 rounded-xl font-bold text-base md:text-lg border border-border hover:bg-surface transition-all active:scale-95">
                 View Markets
               </button>
             </div>

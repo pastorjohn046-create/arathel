@@ -400,14 +400,14 @@ export default function App() {
           <div className="space-y-12 pb-20">
             {!user && <Hero onOpenAuth={() => setIsAuthModalOpen(true)} />}
             <div className="max-w-7xl mx-auto px-4 mt-8">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold flex items-center text-ink">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                <h2 className="text-xl md:text-2xl font-bold flex items-center text-ink">
                   <Activity className="mr-2 text-brand" />
                   Portfolio Overview
                 </h2>
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
                   {['All', 'Stocks', 'ETFs', 'Bonds'].map((cat) => (
-                    <button key={cat} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-white border border-border text-ink-muted hover:border-brand hover:text-brand transition-all">
+                    <button key={cat} className="px-4 py-1.5 rounded-lg text-[10px] md:text-xs font-bold bg-white border border-border text-ink-muted hover:border-brand hover:text-brand transition-all whitespace-nowrap">
                       {cat}
                     </button>
                   ))}
@@ -483,21 +483,23 @@ export default function App() {
         )}
 
         {activeTab === 'trading' && (
-          <div className="max-w-7xl mx-auto p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="relative">
+          <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="relative w-full md:w-auto">
                 <button 
                   onClick={() => setIsStockListOpen(!isStockListOpen)}
-                  className="flex items-center space-x-3 bg-white border border-border px-4 py-2 rounded-xl hover:border-brand transition-all"
+                  className="flex items-center justify-between md:justify-start space-x-3 bg-white border border-border px-4 py-2 rounded-xl hover:border-brand transition-all w-full md:w-auto"
                 >
-                  <div className="w-8 h-8 bg-brand/10 rounded-lg flex items-center justify-center text-brand font-bold">
-                    {selectedStock.symbol[0]}
-                  </div>
-                  <div className="text-left">
-                    <h2 className="text-lg font-bold text-ink flex items-center">
-                      {selectedStock.symbol} <ChevronDown size={16} className="ml-1 text-ink-muted" />
-                    </h2>
-                    <p className="text-[10px] text-ink-muted font-bold uppercase tracking-wider">{selectedStock.name}</p>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-brand/10 rounded-lg flex items-center justify-center text-brand font-bold">
+                      {selectedStock.symbol[0]}
+                    </div>
+                    <div className="text-left">
+                      <h2 className="text-base md:text-lg font-bold text-ink flex items-center">
+                        {selectedStock.symbol} <ChevronDown size={16} className="ml-1 text-ink-muted" />
+                      </h2>
+                      <p className="text-[10px] text-ink-muted font-bold uppercase tracking-wider">{selectedStock.name}</p>
+                    </div>
                   </div>
                 </button>
 
@@ -533,32 +535,32 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center space-x-4 text-xs font-bold uppercase tracking-widest text-ink-muted">
+              <div className="hidden sm:flex items-center space-x-4 text-[10px] md:text-xs font-bold uppercase tracking-widest text-ink-muted">
                 <span className="flex items-center"><div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" /> Market Open</span>
-                <span>NASDAQ: 16,428.82 <span className="text-green-600">+1.2%</span></span>
+                <span className="hidden md:inline">NASDAQ: 16,428.82 <span className="text-green-600">+1.2%</span></span>
               </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Main Chart Area */}
-              <Card className="lg:col-span-8 h-[600px] flex flex-col">
-                <div className="flex items-center justify-between mb-6 p-4 border-b border-border -mx-6 -mt-6">
-                  <div className="flex items-center space-x-6">
+              <Card className="lg:col-span-8 h-[400px] md:h-[600px] flex flex-col">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 p-4 border-b border-border -mx-6 -mt-6 gap-4">
+                  <div className="flex items-center space-x-4 md:space-x-6">
                     <div>
-                      <h3 className="text-xl font-bold text-ink">{selectedStock.symbol}</h3>
-                      <p className="text-xs text-ink-muted">{selectedStock.name}</p>
+                      <h3 className="text-lg md:text-xl font-bold text-ink">{selectedStock.symbol}</h3>
+                      <p className="text-[10px] md:text-xs text-ink-muted">{selectedStock.name}</p>
                     </div>
                     <div className="h-8 w-px bg-border" />
                     <div>
-                      <p className="text-xl font-bold text-ink">${selectedStock.price}</p>
-                      <p className={`text-xs font-bold ${selectedStock.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>{selectedStock.change}</p>
+                      <p className="text-lg md:text-xl font-bold text-ink">${selectedStock.price}</p>
+                      <p className={`text-[10px] md:text-xs font-bold ${selectedStock.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>{selectedStock.change}</p>
                     </div>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-1 md:space-x-2">
                     {['1D', '1W', '1M', '1Y'].map(tf => (
                       <button 
                         key={tf} 
                         onClick={() => setTimeFrame(tf)}
-                        className={`px-3 py-1 rounded text-[10px] font-bold border transition-all ${tf === timeFrame ? 'bg-brand text-white border-brand' : 'bg-surface text-ink-muted border-border hover:border-brand'}`}
+                        className={`px-2.5 md:px-3 py-1 rounded text-[9px] md:text-[10px] font-bold border transition-all ${tf === timeFrame ? 'bg-brand text-white border-brand' : 'bg-surface text-ink-muted border-border hover:border-brand'}`}
                       >
                         {tf}
                       </button>
@@ -708,12 +710,12 @@ export default function App() {
         )}
 
         {activeTab === 'news' && (
-          <div className="max-w-7xl mx-auto p-6 space-y-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-ink">Market Intelligence</h2>
-              <div className="flex space-x-2">
+          <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <h2 className="text-2xl md:text-3xl font-bold text-ink">Market Intelligence</h2>
+              <div className="flex space-x-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
                 {['All News', 'Analysis', 'Earnings', 'Macro'].map(filter => (
-                  <button key={filter} className="px-4 py-1.5 rounded-full text-xs font-bold bg-white border border-border text-ink-muted hover:border-brand hover:text-brand transition-all">
+                  <button key={filter} className="px-4 py-1.5 rounded-full text-[10px] md:text-xs font-bold bg-white border border-border text-ink-muted hover:border-brand hover:text-brand transition-all whitespace-nowrap">
                     {filter}
                   </button>
                 ))}

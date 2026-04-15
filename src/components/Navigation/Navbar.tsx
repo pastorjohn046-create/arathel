@@ -30,13 +30,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenA
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border px-6 py-3">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border px-4 md:px-6 py-3">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => setActiveTab('dashboard')}>
-          <div className="w-9 h-9 bg-brand rounded-xl flex items-center justify-center shadow-lg shadow-brand/20 group-hover:scale-105 transition-transform">
-            <BarChart2 className="text-white" size={22} />
+        <div className="flex items-center space-x-2 md:space-x-3 cursor-pointer group" onClick={() => setActiveTab('dashboard')}>
+          <div className="w-8 h-8 md:w-9 md:h-9 bg-brand rounded-lg md:rounded-xl flex items-center justify-center shadow-lg shadow-brand/20 group-hover:scale-105 transition-transform">
+            <BarChart2 className="text-white" size={18} />
           </div>
-          <h1 className="text-xl font-black tracking-tighter text-ink">ARATHEL<span className="text-brand">.</span></h1>
+          <h1 className="text-lg md:text-xl font-black tracking-tighter text-ink">ARATHEL<span className="text-brand">.</span></h1>
         </div>
 
         {/* Desktop Nav */}

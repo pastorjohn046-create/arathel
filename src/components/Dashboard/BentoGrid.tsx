@@ -30,38 +30,39 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
   performanceData,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-auto gap-6 p-4 max-w-7xl mx-auto">
+    <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-auto gap-4 md:gap-6 p-2 md:p-4 max-w-7xl mx-auto">
       {/* Main Portfolio Card */}
-      <Card className="md:col-span-2 md:row-span-2 flex flex-col justify-between">
+      <Card className="md:col-span-2 md:row-span-2 flex flex-col justify-between p-4 md:p-6">
         <div>
           <div className="flex justify-between items-start mb-6">
             <div>
               <p className="stat-label">Total Portfolio Value</p>
-              <h2 className="stat-value mt-1">${portfolioValue.toLocaleString()}</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-ink mt-1">${portfolioValue.toLocaleString()}</h2>
             </div>
-            <div className={`px-3 py-1 rounded-full text-sm font-bold flex items-center ${dailyPnL >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-              {dailyPnL >= 0 ? <ArrowUpRight size={16} className="mr-1" /> : <ArrowDownRight size={16} className="mr-1" />}
-              {dailyPnL >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
+            <div className={`px-2 md:px-3 py-1 rounded-full text-xs font-bold flex items-center ${dailyPnL >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {dailyPnL >= 0 ? <ArrowUpRight size={14} className="md:mr-1" /> : <ArrowDownRight size={14} className="md:mr-1" />}
+              <span className="hidden xs:inline">{dailyPnL >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%</span>
+              <span className="xs:hidden">{pnlPct.toFixed(1)}%</span>
             </div>
           </div>
-          <div className="h-56">
+          <div className="h-40 md:h-56">
             <PnLChart data={performanceData} />
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
+        <div className="grid grid-cols-3 gap-2 md:gap-4 mt-6 pt-6 border-t border-border">
           <div>
-            <p className="stat-label">Daily P/L</p>
-            <p className={`font-bold ${dailyPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className="stat-label text-[10px]">Daily P/L</p>
+            <p className={`font-bold text-xs md:text-base ${dailyPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {dailyPnL >= 0 ? '+' : '-'}${Math.abs(dailyPnL).toLocaleString()}
             </p>
           </div>
           <div>
-            <p className="stat-label">Holdings</p>
-            <p className="text-ink font-bold">{holdingsCount} Stocks</p>
+            <p className="stat-label text-[10px]">Holdings</p>
+            <p className="text-ink font-bold text-xs md:text-base">{holdingsCount} Stocks</p>
           </div>
           <div>
-            <p className="stat-label">Buying Power</p>
-            <p className="text-brand font-bold">${buyingPower.toLocaleString()}</p>
+            <p className="stat-label text-[10px]">Buying Power</p>
+            <p className="text-brand font-bold text-xs md:text-base">${buyingPower.toLocaleString()}</p>
           </div>
         </div>
       </Card>
@@ -130,8 +131,8 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
         </div>
         <div className="space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="flex space-x-4 group cursor-pointer">
-              <div className="w-16 h-16 rounded-lg bg-surface flex-shrink-0 overflow-hidden border border-border">
+            <div key={i} className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 group cursor-pointer">
+              <div className="w-full sm:w-16 h-32 sm:h-16 rounded-lg bg-surface flex-shrink-0 overflow-hidden border border-border">
                 <img 
                   src={`https://picsum.photos/seed/finance${i}/200/200`} 
                   alt="news" 
@@ -140,8 +141,8 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
                 />
               </div>
               <div className="flex-grow">
-                <h4 className="text-sm font-bold text-ink line-clamp-1 group-hover:text-brand transition-colors">S&P 500 Hits New Record High Amid Tech Rally</h4>
-                <p className="text-[11px] text-ink-muted mt-0.5 line-clamp-1">Investors remain optimistic as corporate earnings exceed expectations...</p>
+                <h4 className="text-sm font-bold text-ink line-clamp-2 sm:line-clamp-1 group-hover:text-brand transition-colors">S&P 500 Hits New Record High Amid Tech Rally</h4>
+                <p className="text-[11px] text-ink-muted mt-0.5 line-clamp-2 sm:line-clamp-1">Investors remain optimistic as corporate earnings exceed expectations...</p>
                 <div className="flex items-center space-x-2 mt-1">
                   <span className="text-[9px] bg-brand/10 text-brand px-1.5 py-0.5 rounded font-bold uppercase">Markets</span>
                   <span className="text-[9px] text-ink-muted">2h ago</span>

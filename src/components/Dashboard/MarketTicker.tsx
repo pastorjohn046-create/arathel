@@ -25,16 +25,16 @@ export const MarketTicker: React.FC = () => {
         }}
       >
         {[...MOCK_ASSETS, ...MOCK_ASSETS].map((asset, idx) => (
-          <div key={idx} className="inline-flex items-center mx-8 space-x-2">
-            <span className="font-bold text-ink">{asset.symbol}</span>
-            <span className="font-mono text-brand">{asset.price}</span>
-            <span className={asset.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}>
+          <div key={idx} className="inline-flex items-center mx-4 md:mx-8 space-x-2">
+            <span className="font-bold text-ink text-xs md:text-sm">{asset.symbol}</span>
+            <span className="font-mono text-brand text-xs md:text-sm">{asset.price}</span>
+            <span className={`text-[10px] md:text-xs ${asset.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
               {asset.change}
             </span>
             {asset.change.startsWith('+') ? (
-              <TrendingUp size={14} className="text-green-600" />
+              <TrendingUp size={12} className="text-green-600" />
             ) : (
-              <TrendingDown size={14} className="text-red-600" />
+              <TrendingDown size={12} className="text-red-600" />
             )}
           </div>
         ))}

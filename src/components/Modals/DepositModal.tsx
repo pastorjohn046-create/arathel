@@ -111,9 +111,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
           <X size={20} />
         </button>
 
-        <div className="p-8">
-          <h2 className="text-2xl font-bold text-ink mb-2">Deposit Funds</h2>
-          <p className="text-sm text-ink-muted mb-8">Add capital to your trading account.</p>
+        <div className="p-6 md:p-8">
+          <h2 className="text-xl md:text-2xl font-bold text-ink mb-2">Deposit Funds</h2>
+          <p className="text-xs md:text-sm text-ink-muted mb-6 md:mb-8">Add capital to your trading account.</p>
 
           {success ? (
             <div className="text-center py-8">
